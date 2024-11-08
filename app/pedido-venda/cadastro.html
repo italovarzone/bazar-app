@@ -52,11 +52,7 @@
             <form id="orderForm" onsubmit="sellItem(event)" class="flex flex-col gap-3">
                 <div class="flex flex-col">
                     <label for="client" class="text-sm mb-1">Nome do Cliente</label>
-                    <select id="client" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-                        <option value="Cliente A">Cliente A</option>
-                        <option value="Cliente B">Cliente B</option>
-                        <option value="Cliente C">Cliente C</option>
-                    </select>
+                    <input type="text" id="client" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400" placeholder="Digite o nome do cliente" required>
                 </div>
                 <div class="flex flex-col">
                     <label for="datetime" class="text-sm mb-1">Data e Hora</label>
@@ -70,9 +66,33 @@
                     <label for="value" class="text-sm mb-1">Valor (R$)</label>
                     <input type="text" id="value" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400" placeholder="R$ 0,00" required oninput="formatCurrency(this)">
                 </div>
-                <button type="submit" class="bg-green-600 text-white py-3 rounded-lg w-full text-center hover:bg-green-700">Vender</button>
+                <div class="flex flex-col">
+                    <label for="paymentMethod" class="text-sm mb-1">Método de Pagamento</label>
+                    <select id="paymentMethod" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Cartão (Debito)">Cartão (Debito)</option>
+                        <option value="Cartão (Crédito)">Cartão (Crédito)</option>
+                        <option value="Pix">Pix</option>
+                    </select>
+                </div>
+                
+                <button id="sellButton" type="submit" class="bg-green-600 text-white py-3 rounded-lg w-full text-center hover:bg-green-700 flex items-center justify-center">
+                    <span id="buttonText">Vender</span>
+                    <svg id="spinner" class="animate-spin h-5 w-5 text-white ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 2.042.784 3.904 2.051 5.291l1.949-1.949z"></path>
+                    </svg>
+                </button>
             </form>
         </div>
+    </div>
+
+    <!-- Snackbar -->
+    <div id="snackbarSuccess" class="hidden fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg">
+        Venda realizada com sucesso!
+    </div>
+    <div id="snackbarError" class="hidden fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg">
+        Ops... Sua venda não foi efetuada.
     </div>
 
     <!-- Sidebar Button -->
@@ -126,99 +146,177 @@
         </div>
     </div>
 
-    <script>
-        let selectedItem = '';
+<script>
+    let selectedItem = '';
 
         function selectItem(item) {
-            selectedItem = item;
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.remove('hidden');
-            const dateTimeInput = document.getElementById('datetime');
-            dateTimeInput.value = new Date().toISOString().slice(0, 16); // Definindo data e hora atual
+        selectedItem = item;
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.remove('hidden');
 
-            // Exibe o botão de Auxiliador de Venda
-            document.getElementById('toggleSidebar').classList.remove('hidden');
-        }
+        // Obtendo a data atual e ajustando para o horário de Brasília
+        const now = new Date();
+        const brasiliaTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
 
-        function sellItem(event) {
-            event.preventDefault();
-            const client = document.getElementById('client').value;
-            const dateTime = document.getElementById('datetime').value;
-            const description = document.getElementById('description').value;
-            const value = document.getElementById('value').value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+        // Formata a data para o padrão aceito pelo input datetime-local
+        const year = brasiliaTime.getFullYear();
+        const month = String(brasiliaTime.getMonth() + 1).padStart(2, '0');
+        const day = String(brasiliaTime.getDate()).padStart(2, '0');
+        const hours = String(brasiliaTime.getHours()).padStart(2, '0');
+        const minutes = String(brasiliaTime.getMinutes()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
 
-            alert(`Venda Realizada!\nItem: ${selectedItem}\nCliente: ${client}\nData e Hora: ${dateTime}\nDescrição: ${description}\nValor: R$${parseFloat(value).toFixed(2).replace('.', ',')}`);
-        }
+        const dateTimeInput = document.getElementById('datetime');
+        dateTimeInput.value = formattedDate;
 
-        function formatCurrency(input) {
-            let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
-            value = (value / 100).toFixed(2) + ''; // Formata para decimal
-            value = value.replace('.', ','); // Substitui ponto por vírgula
-            value = 'R$ ' + value.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Adiciona os pontos de milhar
-            input.value = value;
-        }
+        // Exibe o botão de Auxiliador de Venda
+        document.getElementById('toggleSidebar').classList.remove('hidden');
+    }
 
-        function calculateChange() {
-            const valueInput = document.getElementById('value').value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
-            const receivedInput = document.getElementById('received').value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+    async function sellItem(event) {
+        event.preventDefault();
 
-            const value = parseFloat(valueInput) || 0;
-            const received = parseFloat(receivedInput) || 0;
+        const sellButton = document.getElementById('sellButton');
+        const buttonText = document.getElementById('buttonText');
+        const spinner = document.getElementById('spinner');
 
-            const changeOutput = document.getElementById('changeOutput');
+        // Mostrar o spinner e desativar o botão
+        buttonText.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        sellButton.disabled = true;
 
-            // Verifica se o valor foi informado
-            if (!value || isNaN(value) || value === 0) {
-                changeOutput.textContent = "Por favor, informe o valor do produto antes de calcular o troco.";
-                return;
-            }
+        const client = document.getElementById('client').value;
+        const dateTimeInput = document.getElementById('datetime').value;
+        const description = document.getElementById('description').value;
+        const value = document.getElementById('value').value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+        const paymentMethod = document.getElementById('paymentMethod').value; // Obtém o método de pagamento
 
-            const change = received - value;
+        // Converte a data do input para um objeto Date
+        const localDateTime = new Date(dateTimeInput);
 
-            if (change < 0) {
-                changeOutput.textContent = `Troco: R$ 0,00 (Valor insuficiente)`;
+        // Ajusta a data para o horário de Brasília (UTC-3)
+        const brasiliaTimeOffset = 3 * 60 * 60 * 1000; // Offset de 3 horas em milissegundos
+        const adjustedDateTime = new Date(localDateTime.getTime() - brasiliaTimeOffset).toISOString();
+
+        const vendaData = {
+            nomeCliente: client,
+            dataHora: adjustedDateTime,
+            descricaoProduto: description,
+            valor: parseFloat(value),
+            tipoProduto: selectedItem,
+            metodoPagamento: paymentMethod // Adiciona metodoPagamento
+        };
+
+        try {
+            const response = await fetch('http://localhost:1433/api/vendas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(vendaData)
+            });
+
+            if (response.ok) {
+                showSnackbar('snackbarSuccess');
+                setTimeout(() => {
+                    window.location.href = 'listagem.html'; // Redireciona para listagem após sucesso
+                }, 2000); // Redireciona após 2 segundos para permitir visualização do snackbar
             } else {
-                changeOutput.textContent = `Troco: R$ ${change.toFixed(2).replace('.', ',')}`;
+                const errorData = await response.json();
+                showSnackbar('snackbarError', `Ops... Sua venda não foi efetuada. ERRO: ${errorData.message}`);
             }
+
+        } catch (error) {
+            showSnackbar('snackbarError', `Ops... Sua venda não foi efetuada. ERRO: ${error.message}`);
+        } finally {
+            // Ocultar o spinner e habilitar o botão
+            buttonText.classList.remove('hidden');
+            spinner.classList.add('hidden');
+            sellButton.disabled = false;
+        }
+    }
+
+    function showSnackbar(id, message = '') {
+        const snackbar = document.getElementById(id);
+        if (message) snackbar.textContent = message;
+        snackbar.classList.remove('hidden');
+
+        // Ocultar o snackbar após 3 segundos
+        setTimeout(() => {
+            snackbar.classList.add('hidden');
+        }, 3000);
+    }
+
+    function formatCurrency(input) {
+        let value = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+        value = (value / 100).toFixed(2) + ''; // Formata para decimal
+        value = value.replace('.', ','); // Substitui ponto por vírgula
+        value = 'R$ ' + value.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Adiciona os pontos de milhar
+        input.value = value;
+    }
+
+    function calculateChange() {
+        const valueInput = document.getElementById('value').value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+        const receivedInput = document.getElementById('received').value.replace('R$ ', '').replace(/\./g, '').replace(',', '.');
+
+        const value = parseFloat(valueInput) || 0;
+        const received = parseFloat(receivedInput) || 0;
+
+        const changeOutput = document.getElementById('changeOutput');
+
+        // Verifica se o valor foi informado
+        if (!value || isNaN(value) || value === 0) {
+            changeOutput.textContent = "Por favor, informe o valor do produto antes de calcular o troco.";
+            return;
         }
 
-        // Calculator Functions
-        function appendToCalc(value) {
-            const display = document.getElementById('calcDisplay');
-            if (display.value === '0') {
-                display.value = value;
-            } else {
-                display.value += value;
-            }
+        const change = received - value;
+
+        if (change < 0) {
+            changeOutput.textContent = `Troco: R$ 0,00 (Valor insuficiente)`;
+        } else {
+            changeOutput.textContent = `Troco: R$ ${change.toFixed(2).replace('.', ',')}`;
         }
+    }
 
-        function clearCalc() {
-            document.getElementById('calcDisplay').value = '0';
+    // Calculator Functions
+    function appendToCalc(value) {
+        const display = document.getElementById('calcDisplay');
+        if (display.value === '0') {
+            display.value = value;
+        } else {
+            display.value += value;
         }
+    }
 
-        function calculateResult() {
-            const display = document.getElementById('calcDisplay');
-            try {
-                display.value = eval(display.value); // Avaliação da expressão
-            } catch (e) {
-                display.value = 'Erro';
-            }
+    function clearCalc() {
+        document.getElementById('calcDisplay').value = '0';
+    }
+
+    function calculateResult() {
+        const display = document.getElementById('calcDisplay');
+        try {
+            display.value = eval(display.value); // Avaliação da expressão
+        } catch (e) {
+            display.value = 'Erro';
         }
+    }
 
-        // Sidebar toggle functionality
-        const toggleSidebar = document.getElementById('toggleSidebar');
-        const closeSidebar = document.getElementById('closeSidebar');
-        const sidebar = document.getElementById('sidebar');
+    // Sidebar toggle functionality
+    const toggleSidebar = document.getElementById('toggleSidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const sidebar = document.getElementById('sidebar');
 
-        toggleSidebar.addEventListener('click', () => {
-            sidebar.classList.toggle('sidebar-open');
-            sidebar.classList.toggle('sidebar-closed');
-        });
+    toggleSidebar.addEventListener('click', () => {
+        sidebar.classList.toggle('sidebar-open');
+        sidebar.classList.toggle('sidebar-closed');
+    });
 
-        closeSidebar.addEventListener('click', () => {
-            sidebar.classList.add('sidebar-closed');
-            sidebar.classList.remove('sidebar-open');
-        });
-    </script>
+    closeSidebar.addEventListener('click', () => {
+        sidebar.classList.add('sidebar-closed');
+        sidebar.classList.remove('sidebar-open');
+    });
+</script>
+
 </body>
 </html>

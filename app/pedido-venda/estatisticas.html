@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas - Bazar App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .bg-primary {
+            background-color: #4caf50;
+        }
+        .text-primary {
+            color: #4caf50;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4caf50;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 mt-16">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4 text-center">Estatísticas das Vendas</h1>
+        <div class="mb-4">
+            <label for="dataInicio" class="block text-sm font-medium text-gray-700">Data de Início:</label>
+            <input type="date" id="dataInicio" class="border border-gray-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <div class="mb-4">
+            <label for="dataFim" class="block text-sm font-medium text-gray-700">Data de Fim:</label>
+            <input type="date" id="dataFim" class="border border-gray-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <button id="verEstatisticas" class="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 w-full mb-4">
+            Gerar Estatísticas
+        </button>
+        <div id="resultadoEstatisticas" class="hidden p-4 bg-white rounded-lg shadow-md mt-4"></div>
+        <div id="spinner" class="hidden flex justify-center mt-4">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchEstatisticas() {
+            const dataInicio = document.getElementById('dataInicio').value;
+            const dataFim = document.getElementById('dataFim').value;
+
+            if (!dataInicio || !dataFim) {
+                alert('Por favor, selecione um intervalo de datas.');
+                return;
+            }
+
+            const spinner = document.getElementById('spinner');
+            const container = document.getElementById('resultadoEstatisticas');
+            container.classList.add('hidden');
+            spinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`http://localhost:1433/api/vendas/estatisticas?dataInicio=${dataInicio}&dataFim=${dataFim}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    renderEstatisticas(data);
+                } else {
+                    console.error('Erro ao buscar estatísticas:', response.statusText);
+                    container.innerHTML = '<p class="text-red-500">Erro ao buscar estatísticas</p>';
+                    container.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erro ao conectar com a API:', error.message);
+                container.innerHTML = '<p class="text-red-500">Erro ao conectar com a API</p>';
+                container.classList.remove('hidden');
+            } finally {
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function renderEstatisticas(data) {
+            const container = document.getElementById('resultadoEstatisticas');
+            if (
+                data.totalVendas === 0 || 
+                data.totalVendas === null || 
+                data.totalFaturamento === null || 
+                data.totalRoupas === null || 
+                data.totalOutros === null
+            ) {
+                container.innerHTML = `
+                    <h2 class="text-lg font-bold mb-2">Relatório de Estatísticas</h2>
+                    <p class="text-gray-700">Nenhuma venda registrada no período selecionado.</p>
+                `;
+            } else {
+                container.innerHTML = `
+                    <h2 class="text-lg font-bold mb-2">Relatório de Estatísticas</h2>
+                    <p><strong>Total de Vendas:</strong> ${data.totalVendas}</p>
+                    <p><strong>Total de Faturamento:</strong> R$${data.totalFaturamento.toFixed(2).replace('.', ',')}</p>
+                    <p><strong>Total de Roupas Vendidas:</strong> ${data.totalRoupas}</p>
+                    <p><strong>Total de Outros Vendidos:</strong> ${data.totalOutros}</p>
+                `;
+            }
+            container.classList.remove('hidden');
+        }
+
+        document.getElementById('verEstatisticas').addEventListener('click', fetchEstatisticas);
+    </script>
+</body>
+</html>
