@@ -69,7 +69,7 @@
             spinner.classList.remove('hidden');
 
             try {
-                const response = await fetch(`http://localhost:1433/api/vendas/estatisticas?dataInicio=${dataInicio}&dataFim=${dataFim}`);
+                const response = await fetch(`https://bazar-api-3ljg.onrender.com/api/vendas/estatisticas?dataInicio=${dataInicio}&dataFim=${dataFim}`);
                 if (response.ok) {
                     const data = await response.json();
                     renderEstatisticas(data);

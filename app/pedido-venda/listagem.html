@@ -69,7 +69,7 @@
             console.log('Parâmetros da requisição:', queryParams.toString()); // Adiciona log para verificar os parâmetros enviados
 
             try {
-                const response = await fetch(`http://localhost:1433/api/vendas?${queryParams.toString()}`);
+                const response = await fetch(`https://bazar-api-3ljg.onrender.com/api/vendas?${queryParams.toString()}`);
                 if (response.ok) {
                     const orders = await response.json();
                     renderOrders(orders);
@@ -142,7 +142,7 @@
             if (!vendaIdToDelete) return;
 
             try {
-                const response = await fetch(`http://localhost:1433/api/vendas/${vendaIdToDelete}`, {
+                const response = await fetch(`https://bazar-api-3ljg.onrender.com/api/vendas/${vendaIdToDelete}`, {
                     method: 'DELETE'
                 });
 
